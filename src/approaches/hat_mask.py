@@ -7,6 +7,7 @@ import pandas as pd
 from pathlib import Path
 import os
 
+
 ########################################################################################################################
 
 class Appr(object):
@@ -64,21 +65,18 @@ class Appr(object):
                 train_loss_df = pd.read_csv(train_loss_file_path)
             else:
                 train_loss_df = pd.DataFrame(columns=["Task","Epochs","Train_loss","Train_acc","Avg_train_reg","Val_loss","Val_acc","Avg_val_reg","Learning_rate"])
+            
             for e in range(self.nepochs):
                 # Train
                 clock0=time.time()
                 self.train_epoch(t,xtrain,ytrain)
                 clock1=time.time()
                 train_loss,train_acc, train_avg_reg=self.eval(t,xtrain,ytrain)
-                # train_loss,train_acc=self.eval(t,xtrain,ytrain)
-
                 clock2=time.time()
-                print('| Epoch {:3d}, time={:5.1f}ms/{:5.1f}ms | Train: loss={:.3f}, acc={:5.1f}% | Learning Rate={} |'.format(e+1,
-                    1000*self.sbatch*(clock1-clock0)/xtrain.size(0),1000*self.sbatch*(clock2-clock1)/xtrain.size(0),train_loss,100*train_acc, lr),end='')
+                print('| Epoch {:3d}, time={:5.1f}ms/{:5.1f}ms | Train: loss={:.3f}, acc={:5.1f}% |'.format(e+1,
+                    1000*self.sbatch*(clock1-clock0)/xtrain.size(0),1000*self.sbatch*(clock2-clock1)/xtrain.size(0),train_loss,100*train_acc),end='')
                 # Valid
                 valid_loss,valid_acc, valid_avg_reg=self.eval(t,xvalid,yvalid)
-                # valid_loss,valid_acc=self.eval(t,xvalid,yvalid)
-
                 print(' Valid: loss={:.3f}, acc={:5.1f}% |'.format(valid_loss,100*valid_acc),end='')
                 # Adapt lr
                 train_loss_df = pd.concat([train_loss_df,pd.DataFrame({"Task":t,"Epochs":e,"Train_loss":round(train_loss,6),
@@ -230,9 +228,8 @@ class Appr(object):
             total_reg+=reg.data.cpu().numpy().item()*len(b)
 
         print('Avg Reg  {:.3f}  '.format(total_reg/total_num),end='')
-        return total_loss/total_num,total_acc/total_num, total_reg/total_num
 
-        # return total_loss/total_num,total_acc/total_num, total_reg/total_num
+        return total_loss/total_num,total_acc/total_num, total_reg/total_num
 
     def criterion(self,outputs,targets,masks):
         reg=0

@@ -7,6 +7,7 @@ import pandas as pd
 from pathlib import Path
 import os
 
+
 ########################################################################################################################
 
 class Appr(object):
@@ -64,21 +65,18 @@ class Appr(object):
                 train_loss_df = pd.read_csv(train_loss_file_path)
             else:
                 train_loss_df = pd.DataFrame(columns=["Task","Epochs","Train_loss","Train_acc","Avg_train_reg","Val_loss","Val_acc","Avg_val_reg","Learning_rate"])
+            
             for e in range(self.nepochs):
                 # Train
                 clock0=time.time()
                 self.train_epoch(t,xtrain,ytrain)
                 clock1=time.time()
                 train_loss,train_acc, train_avg_reg=self.eval(t,xtrain,ytrain)
-                # train_loss,train_acc=self.eval(t,xtrain,ytrain)
-
                 clock2=time.time()
-                print('| Epoch {:3d}, time={:5.1f}ms/{:5.1f}ms | Train: loss={:.3f}, acc={:5.1f}% | Learning Rate={} |'.format(e+1,
-                    1000*self.sbatch*(clock1-clock0)/xtrain.size(0),1000*self.sbatch*(clock2-clock1)/xtrain.size(0),train_loss,100*train_acc, lr),end='')
+                print('| Epoch {:3d}, time={:5.1f}ms/{:5.1f}ms | Train: loss={:.3f}, acc={:5.1f}% |'.format(e+1,
+                    1000*self.sbatch*(clock1-clock0)/xtrain.size(0),1000*self.sbatch*(clock2-clock1)/xtrain.size(0),train_loss,100*train_acc),end='')
                 # Valid
                 valid_loss,valid_acc, valid_avg_reg=self.eval(t,xvalid,yvalid)
-                # valid_loss,valid_acc=self.eval(t,xvalid,yvalid)
-
                 print(' Valid: loss={:.3f}, acc={:5.1f}% |'.format(valid_loss,100*valid_acc),end='')
                 # Adapt lr
                 train_loss_df = pd.concat([train_loss_df,pd.DataFrame({"Task":t,"Epochs":e,"Train_loss":round(train_loss,6),
@@ -117,24 +115,24 @@ class Appr(object):
         mask=self.model.mask(task,s=self.smax)
         for i in range(len(mask)):
             mask[i]=torch.autograd.Variable(mask[i].data.clone(),requires_grad=False)
-        if t==0:
-            self.mask_pre=mask
-        else:
-            for i in range(len(self.mask_pre)):
-                self.mask_pre[i]=torch.max(self.mask_pre[i],mask[i])
+        # if t==0:
+        self.mask_pre=mask
+        # else:
+            # for i in range(len(self.mask_pre)):
+                # self.mask_pre[i]=torch.max(self.mask_pre[i],mask[i])
 
         # Weights mask
-        self.mask_back={}
-        for n,_ in self.model.named_parameters():
-            # try:
-            vals=self.model.get_view_for(n,self.mask_pre)
-            # print(n,vals.shape)
-            # breakpoint()
+        # self.mask_back={}
+        # for n,_ in self.model.named_parameters():
+        #     # try:
+        #     vals=self.model.get_view_for(n,self.mask_pre)
+        #     # print(n,vals.shape)
+        #     # breakpoint()
             
-            if vals is not None:
-                self.mask_back[n]=1-vals
-            # except:
-            #     breakpoint()
+        #     if vals is not None:
+        #         self.mask_back[n]=1-vals
+        #     # except:
+        #     #     breakpoint()
         
         return
 
@@ -163,32 +161,32 @@ class Appr(object):
             self.optimizer.zero_grad()
             loss.backward()
 
-            # Restrict layer gradients in backprop
-            if t>0:
-                for n,p in self.model.named_parameters():
-                    try:
-                        #    [(k,v.shape) for k,v in self.mask_back.items()] 
-                        if n in self.mask_back:
-                            p.grad.data*=self.mask_back[n]
-                    except:
-                        print([(k,v.shape) for k,v in self.mask_back.items()])
-                        # breakpoint()
+            # # Restrict layer gradients in backprop
+            # if t>0:
+            #     for n,p in self.model.named_parameters():
+            #         try:
+            #             #    [(k,v.shape) for k,v in self.mask_back.items()] 
+            #             if n in self.mask_back:
+            #                 p.grad.data*=self.mask_back[n]
+            #         except:
+            #             print([(k,v.shape) for k,v in self.mask_back.items()])
+            #             # breakpoint()
 
-            # Compensate embedding gradients
-            for n,p in self.model.named_parameters():
-                if n.startswith('e'):
-                    num=torch.cosh(torch.clamp(s*p.data,-thres_cosh,thres_cosh))+1
-                    den=torch.cosh(p.data)+1
-                    p.grad.data*=self.smax/s*num/den
+            # # Compensate embedding gradients
+            # for n,p in self.model.named_parameters():
+            #     if n.startswith('e'):
+            #         num=torch.cosh(torch.clamp(s*p.data,-thres_cosh,thres_cosh))+1
+            #         den=torch.cosh(p.data)+1
+            #         p.grad.data*=self.smax/s*num/den
 
             # Apply step
             torch.nn.utils.clip_grad_norm(self.model.parameters(),self.clipgrad)
             self.optimizer.step()
 
-            # Constrain embeddings
-            for n,p in self.model.named_parameters():
-                if n.startswith('e'):
-                    p.data=torch.clamp(p.data,-thres_emb,thres_emb)
+            # # Constrain embeddings
+            # for n,p in self.model.named_parameters():
+            #     if n.startswith('e'):
+            #         p.data=torch.clamp(p.data,-thres_emb,thres_emb)
 
             #print(masks[-1].data.view(1,-1))
             #if i>=5*self.sbatch: sys.exit()
@@ -230,9 +228,8 @@ class Appr(object):
             total_reg+=reg.data.cpu().numpy().item()*len(b)
 
         print('Avg Reg  {:.3f}  '.format(total_reg/total_num),end='')
-        return total_loss/total_num,total_acc/total_num, total_reg/total_num
 
-        # return total_loss/total_num,total_acc/total_num, total_reg/total_num
+        return total_loss/total_num,total_acc/total_num, total_reg/total_num
 
     def criterion(self,outputs,targets,masks):
         reg=0

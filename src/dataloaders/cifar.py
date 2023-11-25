@@ -62,7 +62,10 @@ def get(seed=0,pc_valid=0.10):
 
     # Load binary files
     data={}
-    ids=list(shuffle(np.arange(10),random_state=seed))
+    # ids=list(shuffle(np.arange(10),random_state=seed)) # remove shuffle to sequence data linearly
+    ids=list(np.arange(10)) # remove shuffle to sequence data linearly
+    ids.reverse()
+
     print('Task order =',ids)
     for i in range(10):
         data[i] = dict.fromkeys(['name','ncla','train','test'])

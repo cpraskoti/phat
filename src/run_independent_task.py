@@ -5,6 +5,8 @@ import torch
 import utils
 from torchsummary import summary
 from pathlib import Path
+import os
+import pandas as pd
 
 tstart=time.time()
 
@@ -84,9 +86,9 @@ elif args.approach=='pathnet':
 elif args.approach=='hat-test':
     from approaches import hat_test as approach
 elif args.approach=='hat':
-    from approaches import hat as approach
+    from approaches import hat_indep as approach
 elif args.approach == 'hat_mask':
-    from approaches import hat_mask as approach
+    from approaches import hat_mask_indep as approach
 elif args.approach=='joint':
     from approaches import joint as approach
 
@@ -119,37 +121,20 @@ print('Load data...')
 data,taskcla,inputsize=dataloader.get(seed=args.seed)
 print('Input size =',inputsize,'\nTask info =',taskcla)
 
-# Inits
-print('Inits...')
-if args.approach == "hat_mask":
-    net=network.Net(inputsize,taskcla,args=args).cuda()
-else:
-    net=network.Net(inputsize,taskcla).cuda()
+# # Inits
+# print('Inits...')
+# if args.approach == "hat_mask":
+#     net=network.Net(inputsize,taskcla,args=args).cuda()
+# else:
+#     net=network.Net(inputsize,taskcla).cuda()
 
 
-utils.print_model_report(net)
+# utils.print_model_report(net)
 
-
-# Hyper parameters to search
-lamb=[0.1, 0.25, 0.5, 0.75, 1, 1.5, 2.5, 4]          # Grid search = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2.5, 4]; chosen was 0.75
-smax=[25, 50, 100, 200, 400, 800]          # Grid search = [25, 50, 100, 200, 400, 800]; chosen was 400
-nepochs = [50,100,200,500]
-lr = [0.05,0.005,0.005,0.02,0.002,0.0002]
-
-# Loop over hyperparameters
-for lamb_val, smax_val, nepochs_val, lr_val in itertools.product(lamb_values, smax_values, nepochs_values, lr_values):
-    # Update hyperparameter values
-    args.lamb = lamb_val
-    args.smax = smax_val
-    args.nepochs = nepochs_val
-    args.lr = lr_val
-
-    print(f'Hyperparameters: lamb={lamb_val}, smax={smax_val}, nepochs={nepochs_val}, lr={lr_val}')
-
-appr=approach.Appr(net,nepochs=args.nepochs,lr=args.lr,args=args)
-print(appr.criterion)
-utils.print_optimizer_config(appr.optimizer)
-print('-'*100)
+# appr=approach.Appr(net,nepochs=args.nepochs,lr=args.lr,args=args)
+# print(appr.criterion)
+# utils.print_optimizer_config(appr.optimizer)
+# print('-'*100)
 
 # Loop tasks
 acc=np.zeros((len(taskcla),len(taskcla)),dtype=np.float32)
@@ -185,6 +170,21 @@ for t,ncla in taskcla:
         yvalid=data[t]['valid']['y'].cuda()
         task=t
 
+    # Inits
+    print('Inits...')
+    if args.approach == "hat_mask":
+        net=network.Net(inputsize,taskcla,args=args).cuda()
+    else:
+        net=network.Net(inputsize,taskcla).cuda()
+
+
+    utils.print_model_report(net)
+
+    appr=approach.Appr(net,nepochs=args.nepochs,lr=args.lr,args=args)
+    print(appr.criterion)
+    utils.print_optimizer_config(appr.optimizer)
+    print('-'*100)
+
     # Train
     appr.train(task,xtrain,ytrain,xvalid,yvalid)
     print('-'*100)
@@ -193,25 +193,23 @@ for t,ncla in taskcla:
     for u in range(t+1):
         xtest=data[u]['test']['x'].cuda()
         ytest=data[u]['test']['y'].cuda()
-        test_loss,test_acc, test_avg_reg = appr.eval(u,xtest,ytest)
+        test_loss,test_acc, test_avg_reg=appr.eval(u,xtest,ytest)
         print('>>> Test on task {:2d} - {:15s}: loss={:.3f}, acc={:5.1f}% <<<'.format(u,data[u]['name'],test_loss,100*test_acc))
         acc[t,u]=test_acc
         lss[t,u]=test_loss
 
-        import os
-        import pandas as pd
         test_loss_file_name = "test_loss_"+Path(args.output).stem
         test_loss_file_path = f"{Path(args.output).parent}/{test_loss_file_name}.csv"
         # loss_file_path = f"./res/wt_init_{self.args.weight_initializer}_losses_app_{self.args.approach}_exp_{self.args.experiment}_opt_{self.args.optimizer}_lr_{self.lr}_nepoch_{self.nepochs}.csv"
         if os.path.exists(test_loss_file_path):
             test_loss_df = pd.read_csv(test_loss_file_path)
         else:
-            test_loss_df = pd.DataFrame(columns=["Task","Test_loss","Test_acc","Avg_test_reg"])
+            test_loss_df = pd.DataFrame(columns=["Task","Train_loss","Train_acc","Avg_train_reg"])
 
         test_loss_df = pd.concat([test_loss_df,pd.DataFrame({"Task":f"{u} {data[u]['name']}",
-                            "Test_loss":round(test_loss,6),
-                            "Test_acc":round(100*test_acc,6),
-                            "Avg_test_reg":round(test_avg_reg,6),
+                            "Train_loss":round(test_loss,6),
+                            "Train_acc":round(100*test_acc,6),
+                            "Avg_train_reg":round(test_avg_reg,6),
                             # "Val_loss":round(valid_loss,6),
                             # "Val_acc":round(100*valid_acc,6),
                             # "Avg_val_reg":round(valid_avg_reg,6),
