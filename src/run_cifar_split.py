@@ -24,6 +24,7 @@ parser.add_argument('--lr',default=0.05,type=float,required=False,help='(default
 parser.add_argument('--parameter',type=str,default='',help='(default=%(default)s)')
 parser.add_argument('--optimizer',default='sgd',type=str,required=False,choices=['sgd','adam'],help='(default=%(default)s)')
 parser.add_argument('--weight_initializer',default='',type=str,required=False,choices=['xavier'],help='(default=%(default)s)')
+parser.add_argument('--datatype',default='cifar',type=str,required=False,choices=['cifar','cifar10','cifar100'],help='(default=%(default)s)')
 
 args=parser.parse_args()
 # if args.output=='':
@@ -58,6 +59,12 @@ if args.experiment=='mnist2':
     from dataloaders import mnist2 as dataloader
 elif args.experiment=='pmnist':
     from dataloaders import pmnist as dataloader
+
+elif (args.experiment=='cifar') and (args.datatype=='cifar10'):
+    from dataloaders import cifar_10 as dataloader
+elif (args.experiment=='cifar') and (args.datatype=='cifar100'):
+
+    from dataloaders import cifar_100 as dataloader
 elif args.experiment=='cifar':
     from dataloaders import cifar as dataloader
 elif args.experiment=='mixture':
@@ -138,7 +145,7 @@ else:
 # Hyper parameters to search
 lamb_values=[0.5, 0.75, 1, 4]          # Grid search = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2.5, 4]; chosen was 0.75
 smax_values=[200, 400, 800]          # Grid search = [25, 50, 100, 200, 400, 800]; chosen was 400
-nepochs_values = [200]
+nepochs_values = [1]
 lr_values = [0.003,0.0002]
 optimizer_values = ["adam"]
 
@@ -157,7 +164,7 @@ all_combinations = list(itertools.product(lamb_values, smax_values, nepochs_valu
 
 # Randomly sample from all combinations
 random_combinations = random.sample(all_combinations, num_random_combinations)
-
+exp_folder = args.output
 # Loop over hyperparameters
 for lamb_val, smax_val, nepochs_val, lr_val, optimizer in random_combinations:
     # Update hyperparameter values
@@ -167,14 +174,13 @@ for lamb_val, smax_val, nepochs_val, lr_val, optimizer in random_combinations:
     args.lr = lr_val
     args.optimizer = optimizer
 
-    output_file_prefix = f"{args.approach}_{args.experiment}_{args.optimizer}_{args.weight_initializer}_{args.lr}_{args.nepochs}_{args.lamb}_{args.smax}"
-    # breakpoint()
+    output_file_prefix = f"{args.datatype}_{args.approach}_{args.experiment}_{args.optimizer}_{args.weight_initializer}_{args.lr}_{args.nepochs}_{args.lamb}_{args.smax}"
     if args.output=='':
         args.output = f"./res/{output_file_prefix}/{output_file_prefix}.txt"
     else:
         # if not os.path.exists(args.)
-        Path(f"./res/hyper_param/{args.approach}/{output_file_prefix}/").mkdir(parents=True, exist_ok=True)
-        args.output = f"./res/hyper_param/{args.approach}/{output_file_prefix}/{output_file_prefix}.txt"
+        Path(f"{exp_folder}/{args.approach}/{output_file_prefix}/").mkdir(parents=True, exist_ok=True)
+        args.output = f"{exp_folder}/{args.approach}/{output_file_prefix}/{output_file_prefix}.txt"
 
     print(f'Hyperparameters: lamb={lamb_val}, smax={smax_val}, nepochs={nepochs_val}, lr={lr_val}')
 

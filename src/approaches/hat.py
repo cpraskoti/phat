@@ -197,7 +197,7 @@ class Appr(object):
 
         return
 
-    def eval(self,t,x,y):
+    def eval(self,t,x,y,return_pred=False):
         total_loss=0
         total_acc=0
         total_num=0
@@ -209,6 +209,8 @@ class Appr(object):
         r=torch.LongTensor(r).cuda()
 
         # Loop batches
+        all_targets = []
+        all_predictions = []
         for i in range(0,len(r),self.sbatch):
             if i+self.sbatch<=len(r): b=r[i:i+self.sbatch]
             else: b=r[i:]
@@ -229,8 +231,14 @@ class Appr(object):
             total_num+=len(b)
             total_reg+=reg.data.cpu().numpy().item()*len(b)
 
+            all_targets += targets.cpu().numpy().tolist()
+            all_predictions += pred.cpu().numpy().tolist()
         print('Avg Reg  {:.3f}  '.format(total_reg/total_num),end='')
-        return total_loss/total_num,total_acc/total_num, total_reg/total_num
+        if return_pred:
+            return total_loss/total_num,total_acc/total_num, total_reg/total_num, (all_targets,all_predictions)
+        
+        else:
+            return total_loss/total_num,total_acc/total_num, total_reg/total_num
 
         # return total_loss/total_num,total_acc/total_num, total_reg/total_num
 
