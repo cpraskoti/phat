@@ -145,7 +145,7 @@ else:
 # Hyper parameters to search
 lamb_values=[0.5, 0.75, 1, 4]          # Grid search = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2.5, 4]; chosen was 0.75
 smax_values=[200, 400, 800]          # Grid search = [25, 50, 100, 200, 400, 800]; chosen was 400
-nepochs_values = [1]
+nepochs_values = [200]
 lr_values = [0.003,0.0002]
 optimizer_values = ["adam"]
 
