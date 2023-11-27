@@ -39,7 +39,7 @@ def get(seed=0,pc_valid=0.10):
         dat['train']=datasets.CIFAR100('../dat/',train=True,download=True,transform=transforms.Compose([transforms.ToTensor(),transforms.Normalize(mean,std)]))
         dat['test']=datasets.CIFAR100('../dat/',train=False,download=True,transform=transforms.Compose([transforms.ToTensor(),transforms.Normalize(mean,std)]))
         # for n in range(5,10):
-        for n in range(1,5):
+        for n in range(0,5):
 
             data[n]={}
             data[n]['name']='cifar100'
@@ -80,8 +80,9 @@ def get(seed=0,pc_valid=0.10):
         data[i]['ncla']=len(np.unique(data[i]['train']['y'].numpy()))
         if data[i]['ncla']==2:
             data[i]['name']='cifar10-'+str(ids[i])
-        # else:
-        #     data[i]['name']='cifar100-'+str(ids[i]-5)
+        else:
+            # data[i]['name']='cifar100-'+str(ids[i]-5)
+            data[i]['name']='cifar100-'+str(ids[i])
 
     # Validation
     for t in data.keys():
