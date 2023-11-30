@@ -114,7 +114,7 @@ class Net(torch.nn.Module):
 
     def mask(self, t, s=1):
         ## ss
-        gc1 = self.gate(s * self.ec1(t).view(64, 3))
+        # gc1 = self.gate(s * self.ec1(t).view(64, 3))
         # if self.args.experiment == "cifar":
         #     gc1 = self.gate(s * self.ec1(t).view(64,1))
         # else:
@@ -185,7 +185,9 @@ class Net(torch.nn.Module):
             # return gfc2.data.view(-1)
             return gfc2.data.max(dim=1)[0]
         elif n == 'c1.weight':
-            return gc1.data.view(64, 3, 1, 1).expand_as(self.c1.weight)
+            # return gc1.data.view(64, 3, 1, 1).expand_as(self.c1.weight)
+            return gc1.data.view(64, self.ncha, 1, 1).expand_as(self.c1.weight)
+
         elif n == 'c1.bias':
             # return gc1.data.view(-1)
             return gc1.data.max(dim=1)[0]

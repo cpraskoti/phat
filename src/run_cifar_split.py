@@ -24,7 +24,7 @@ parser.add_argument('--lr',default=0.05,type=float,required=False,help='(default
 parser.add_argument('--parameter',type=str,default='',help='(default=%(default)s)')
 parser.add_argument('--optimizer',default='sgd',type=str,required=False,choices=['sgd','adam'],help='(default=%(default)s)')
 parser.add_argument('--weight_initializer',default='',type=str,required=False,choices=['xavier'],help='(default=%(default)s)')
-parser.add_argument('--datatype',default='cifar',type=str,required=False,choices=['cifar','cifar10','cifar100','mnist2'],help='(default=%(default)s)')
+parser.add_argument('--datatype',default='cifar',type=str,required=False,choices=['cifar','cifar10','cifar100','mnist2',"mnist5"],help='(default=%(default)s)')
 
 args=parser.parse_args()
 # if args.output=='':
@@ -55,8 +55,13 @@ if torch.cuda.is_available(): torch.cuda.manual_seed(args.seed)
 else: print('[CUDA unavailable]'); sys.exit()
 
 # Args -- Experiment
-if args.experiment=='mnist2':
+
+if args.experiment=='mnist2' and args.datatype == "mnist5":
+    from dataloaders import mnist5 as dataloader
+
+elif args.experiment=='mnist2':
     from dataloaders import mnist2 as dataloader
+
 elif args.experiment=='pmnist':
     from dataloaders import pmnist as dataloader
 
@@ -142,6 +147,13 @@ else:
 # utils.print_model_report(net)
 
 
+# Hyper parameters to search
+lamb_values=[0.5, 0.75, 1, 4]          # Grid search = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2.5, 4]; chosen was 0.75
+smax_values=[200, 400, 800]          # Grid search = [25, 50, 100, 200, 400, 800]; chosen was 400
+nepochs_values = [1]
+lr_values = [0.003,0.0002,0.05]
+optimizer_values = ["adam","sgd"]
+
 # # Hyper parameters to search
 # lamb_values=[0.5, 0.75, 1, 4]          # Grid search = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2.5, 4]; chosen was 0.75
 # smax_values=[200, 400, 800]          # Grid search = [25, 50, 100, 200, 400, 800]; chosen was 400
@@ -149,12 +161,12 @@ else:
 # lr_values = [0.003,0.0002]
 # optimizer_values = ["adam"]
 
-# Hyper parameters to search
-lamb_values=[0.5, 1]          # Grid search = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2.5, 4]; chosen was 0.75
-smax_values=[400]          # Grid search = [25, 50, 100, 200, 400, 800]; chosen was 400
-nepochs_values = [200]
-lr_values = [0.0002]
-optimizer_values = ["adam"]
+# # Hyper parameters to search
+# lamb_values=[0.5, 1]          # Grid search = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2.5, 4]; chosen was 0.75
+# smax_values=[400]          # Grid search = [25, 50, 100, 200, 400, 800]; chosen was 400
+# nepochs_values = [200]
+# lr_values = [0.0002]
+# optimizer_values = ["adam"]
 # # Hyper parameters to search
 # lamb_values=[0.75]          # Grid search = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2.5, 4]; chosen was 0.75
 # smax_values=[400]          # Grid search = [25, 50, 100, 200, 400, 800]; chosen was 400
@@ -212,6 +224,7 @@ for lamb_val, smax_val, nepochs_val, lr_val, optimizer in random_combinations:
     print('Inits...')
 
     if args.approach == "hat_mask":
+        from networks import mask as network
         net=network.Net(inputsize,taskcla,args=args).cuda()
     else:
         net=network.Net(inputsize,taskcla).cuda()
@@ -222,8 +235,11 @@ for lamb_val, smax_val, nepochs_val, lr_val, optimizer in random_combinations:
     if args.approach == "hat_mask" or args.approach == "hat":
         appr=approach.Appr(net,nepochs=args.nepochs,lr=args.lr,args=args,lamb=args.lamb,smax=args.smax)
     
-    else:
+    elif args.approach == "ewc":
         appr=approach.Appr(net,nepochs=args.nepochs,lr=args.lr, lr_min=1e-7,args=args,lamb=args.lamb)
+
+    elif args.approach == "sgd" or args.approach=="pathnet":
+        appr=approach.Appr(net,nepochs=args.nepochs,lr=args.lr, lr_min=1e-7,args=args)
 
     print(appr.criterion)
     utils.print_optimizer_config(appr.optimizer)
