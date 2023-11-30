@@ -8,7 +8,7 @@ import utils
 class Appr(object):
     """ Class implementing the Elastic Weight Consolidation approach described in http://arxiv.org/abs/1612.00796 """
 
-    def __init__(self,model,nepochs=100,sbatch=64,lr=0.05,lr_min=1e-4,lr_factor=3,lr_patience=5,clipgrad=100,lamb=5000,args=None):
+    def __init__(self,model,nepochs=100,sbatch=64,lr=0.05,lr_min=1e-7,lr_factor=3,lr_patience=5,clipgrad=100,lamb=5000,args=None):
         self.model=model
         self.model_old=None
         self.fisher=None
@@ -146,8 +146,11 @@ class Appr(object):
             hits=(pred==targets).float()
 
             # Log
-            total_loss+=loss.data.cpu().numpy()[0]*len(b)
-            total_acc+=hits.sum().data.cpu().numpy()[0]
+            # total_loss+=loss.data.cpu().numpy()[0]*len(b)
+            total_loss+=loss.data.cpu().numpy().item()*len(b)
+            # total_acc+=hits.sum().data.cpu().numpy().item()[0]
+            total_acc+=hits.sum().data.cpu().numpy().item()
+
             total_num+=len(b)
 
         return total_loss/total_num,total_acc/total_num

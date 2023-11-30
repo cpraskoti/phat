@@ -47,6 +47,7 @@ class Net(torch.nn.Module):
         super(Net, self).__init__()
 
         ncha, size, _ = inputsize
+        self.ncha = ncha
         self.taskcla = taskcla
         self.args = args
         self.weight_initializer = args.weight_initializer
@@ -114,6 +115,13 @@ class Net(torch.nn.Module):
     def mask(self, t, s=1):
         ## ss
         gc1 = self.gate(s * self.ec1(t).view(64, 3))
+        # if self.args.experiment == "cifar":
+        #     gc1 = self.gate(s * self.ec1(t).view(64,1))
+        # else:
+        gc1 = self.gate(s * self.ec1(t).view(64, self.ncha))
+
+
+
         gc2 = self.gate(s * self.ec2(t).view(128, 64))
         gc3 = self.gate(s * self.ec3(t).view(256, 128))
         gfc1 = self.gate(s * self.efc1(t).view(2048, 1024))

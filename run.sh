@@ -4,4 +4,9 @@
 
 # python src/run.py --seed 1 --experiment cifar --approach hat --weight_initializer xavier --output ./res/hyper_param/
 
-python src/run.py --seed 1 --experiment cifar --approach hat_mask --weight_initializer xavier --output ./res/hyper_param/
+# python src/run.py --seed 1 --experiment cifar --approach hat_mask --weight_initializer xavier --output ./res/hyper_param/
+
+# python src/run_cifar_split.py --seed 1 --experiment cifar --datatype cifar10 --approach hat_mask --weight_initializer xavier --output ./res/cifar_split/hyperparam/cifar10/  
+
+
+ python src/run_cifar_split.py --seed 1 --experiment cifar --datatype cifar100 --approach hat_mask --weight_initializer xavier --output ./res/cifar_split/hyperparam/cifar100/

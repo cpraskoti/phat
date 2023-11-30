@@ -77,7 +77,7 @@ def get(seed=0,pc_valid=0.10, datatype="cifar10"):
                     nn=(n//20)
                     data[nn][s]['x'].append(image)
                     data[nn][s]['y'].append(n%20)
-
+    
     # "Unify" and save
     for t in data.keys():
         for s in ['train','test']:

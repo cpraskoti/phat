@@ -3,6 +3,20 @@ import torch
 import torch.nn.init as init
 
 import utils
+class Linear_(torch.nn.Module):
+    def __init__(self, in_neurons, out_neurons, bias=True, weight_initializer=None):
+        super(Linear_, self).__init__()
+        self.weight_initializer = weight_initializer
+        self.weight = torch.nn.Parameter(torch.Tensor(out_neurons, in_neurons))
+        if self.weight_initializer == "xavier":
+            init.xavier_uniform_(self.weight)  # Xavier initialization for weights
+        self.bias = torch.nn.Parameter(torch.zeros(out_neurons))
+
+    def forward(self, x, mask):
+        weights = self.weight * mask
+        bias = self.bias * mask.max(dim=1)[0]
+        return torch.nn.functional.linear(x, weights, bias)
+
 
 class Net(torch.nn.Module):
 

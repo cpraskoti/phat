@@ -32,7 +32,7 @@ class Net(torch.nn.Module):
         #"""
         self.L = 5      # our architecture has 5 layers
 
-        self.bestPath = -1 * np.ones((self.ntasks,self.L,self.N),dtype=np.int) #we need to remember this between the tasks
+        self.bestPath = -1 * np.ones((self.ntasks,self.L,self.N),dtype=int) #we need to remember this between the tasks
 
         #init modules subnets
         self.conv1=torch.nn.ModuleList()
